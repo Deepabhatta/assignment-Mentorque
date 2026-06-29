@@ -1,0 +1,47 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              Int                @id @default(autoincrement())
+  email           String             @unique
+  password        String
+  name            String
+  jobRole         String
+  experienceLevel String             // Junior, Mid, Senior
+  createdAt       DateTime           @default(now())
+  sessions        InterviewSession[]
+}
+
+model InterviewSession {
+  id              String          @id @default(uuid())
+  userId          Int
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String          // Behavioral, Technical, System Design, HR
+  status          String          // ongoing, completed
+  difficulty      Int             // 1-5
+  currentStage    String          // intro, QA, wrapUp, feedback
+  transcript      String          // JSON string of conversation: [{role: "assistant" | "user", content: string, timestamp: string, evaluation?: any}]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  report          FeedbackReport?
+}
+
+model FeedbackReport {
+  id                String           @id @default(uuid())
+  sessionId         String           @unique
+  session           InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  overallScore      Int              // 0-100
+  communicationScore Int              // 1-5
+  technicalScore    Int              // 1-5
+  starScore         Int?             // 1-5 (STAR structure for Behavioral)
+  positivePoints    String           // JSON string of string[] (strengths)
+  improvementPoints String           // JSON string of string[] (weaknesses/areas to work on)
+  detailedAnalysis  String           // Large text markdown feedback
+  createdAt         DateTime         @default(now())
+}
